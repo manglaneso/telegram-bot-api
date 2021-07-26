@@ -17,6 +17,7 @@ and add in TelegramBotApi.
 ## TODO
 - Implement Github CI
 - Reformat code to use all options of currently existing methods
+- Add some tests
 - Implement more Telegram Bot API methods
 
 ### Implemented methods
