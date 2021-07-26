@@ -103,4 +103,4 @@ and add in TelegramBotApi.
 |  getGameHighScores  |  ❌  |
 
 
-All methods can be checked on (this link)[https://core.telegram.org/bots/api].
+All methods can be checked on [this link](https://core.telegram.org/bots/api).
