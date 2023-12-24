@@ -5,8 +5,7 @@ It implements basic functionality (send message/animation/gif/video/audio...)
 but lacks a lot of Telegram Bot API methods since I only
 ever needed some methods. PRs are welcome :)
 
-The codebase of this project has a long history. It has been working on some of
- my personal projects for years, but never got time/courage to create a Library.
+The codebase of this project has a long history. It has been working on some of my personal projects for years, but never got time/courage to create a Library. Also, this has not been updated for a long time, so keep in mind there is really old (or bad) code. I started working on this in my university days, so take that into account.
 
 ## Use
 
