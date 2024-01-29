@@ -1,0 +1,51 @@
+name: deploy
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  release:
+    types: [published]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  deploy:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+      
+    - name: Setup Node
+      uses: actions/setup-node@v1
+      with:
+        node-version: '18.x'
+
+    - name: Create .clasp.json
+      uses: finnp/create-file-action@2.0.0
+      env:
+        FILE_NAME: src/.clasp.json
+        FILE_DATA: '{"scriptId":"1doJWr3Q1v2WZamAvcT2_xr6p12wNvheF403cXdYhTbTxu6GMvWkqwarn"}'
+
+    - name: Clasp Token
+      uses: namaggarwal/clasp-token-action@v0.0.1
+      with:
+        # ClientID of the project
+        client-id: ${{ secrets.CLASP_CLIENT_ID }}
+        # Client secret of the project
+        client-secret: ${{ secrets.CLASP_CLIENT_SECRET }}
+        # Refresh token to get new access token
+        refresh-token: ${{ secrets.CLASP_REFRESH_TOKEN }}
+        
+    - name: npm install
+      run: |
+        npm install
+        
+    - name: Push to Google Apps Script
+      run: |
+        npm run-script push-to-app
+
+    - name: Deploy it
+      run: |
+        npm run-script deploy-app
