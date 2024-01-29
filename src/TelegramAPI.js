@@ -15,10 +15,8 @@ class TelegramBotApi_ {
    * @return {object} JSON search result resource returned by Telegram API
    */
   getWebhookInfo() {
-    let result = UrlFetchApp.fetch(`${apiTelegramBotBaseUrl}${this.telegramApiToken_}/getWebhookInfo`, {
-      muteHttpExceptions: false
-    }).getContentText();
-    return JSON.parse(result);
+    let url = `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/getWebhookInfo`;
+    return sendRequest(url);
   }
 
   /**
@@ -26,11 +24,14 @@ class TelegramBotApi_ {
    *
    * @return {object} JSON search result resource returned by Telegram API
    */
-  setWebhook(webhookUrl, telegramApiAuthToken) {
+  setWebhook(webhookUrl, telegramApiAuthToken, maxConnections, allowedUpdates) {
     
+    let url = `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/setWebhook?url=${webhookUrl}${telegramApiAuthToken !== null ? `?token=${telegramApiAuthToken}` : ``}`;
+
     let payload = {
       'method': 'setWebhook',
-      'allowed_updates': []
+      'maxConnections': maxConnections,
+      'allowed_updates': allowedUpdates
     }
 
     let data = {
@@ -38,11 +39,7 @@ class TelegramBotApi_ {
       'payload': payload
     }
     
-    let result = UrlFetchApp.fetch(
-      `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/setWebhook?url=${webhookUrl}${telegramApiAuthToken !== null ? `?token=${telegramApiAuthToken}` : ``}`,
-        data
-      ).getContentText();
-    return JSON.parse(result);
+    return sendRequest(url, data);
   }
 
   /**
@@ -50,10 +47,13 @@ class TelegramBotApi_ {
    *
    * @return {object} JSON search result resource returned by Telegram API
    */
-  deleteWebHook() {
+  deleteWebhook(dropPendingUpdates) {
+
+    let url = `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/deleteWebhook`;
     
     let payload = {
-      'method': 'deleteWebhook'
+      'method': 'deleteWebhook',
+      'drop_pending_updates': dropPendingUpdates
     }
 
     let data = {
@@ -61,9 +61,7 @@ class TelegramBotApi_ {
       'payload': payload
     }
     
-    let result = UrlFetchApp.fetch(apiTelegramBotBaseUrl + this.telegramApiToken_ + '/deleteWebhook', data).getContentText();
-    Logger.log(result);
-    return JSON.parse(result);
+    return sendRequest(url, data);
   }
 
   /**
@@ -75,16 +73,44 @@ class TelegramBotApi_ {
    *
    * @return {object} JSON response returned by Telegram API
    */
-  sendMessage(msg, message, replyTo=false) {
+  sendMessage(params) {
+
+    let url = `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/`;
+    
     let payload = {
       'method': 'sendMessage',
-      'chat_id': String(msg['chat']['id']),
-      'text': message,
-      'parse_mode': 'HTML'
+      'chat_id': params.chatId,
+      'text': params.text,
+      'message_thread_id': params.messageThreadId,
+      'parse_mode': params.parseMode,
+      'entities': JSON.stringify(params.entities),
+      'link_preview_options': JSON.stringify(params.linkPreviewOptions),
+      'disable_notification': params.disableNotification,
+      'protect_content': params.protectContent,
+      'reply_parameters': JSON.stringify(params.replyParameters),
+      'reply_markup': JSON.stringify(params.replyMarkup)
     }
     
-    if(replyTo) {
-      payload['reply_to_message_id'] = msg['message_id']
+    let data = {
+      'method': 'POST',
+      'payload': payload
+    }
+    
+    return sendRequest(url, data);
+  }
+
+  forwardMessage(params) {
+
+    let url = `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/`;
+    
+    let payload = {
+      'method': 'forwardMessage',
+      'chat_id': params.chatId,
+      'from_chat_id': params.fromChatId,
+      'message_id': params.messageId,
+      'message_thread_id': params.messageThreadId,
+      'disable_notification': params.disableNotification,
+      'protect_content': params.protectContent
     }
 
     let data = {
@@ -92,7 +118,7 @@ class TelegramBotApi_ {
       'payload': payload
     }
     
-    return JSON.parse(UrlFetchApp.fetch(apiTelegramBotBaseUrl + this.telegramApiToken_ + '/', data).getContentText());
+    return sendRequest(url, data);
   }
 
   /**
@@ -105,124 +131,145 @@ class TelegramBotApi_ {
    *
    * @return {object} JSON response returned by Telegram API
    */
-  sendPhoto(msg, photo, replyTo=false, caption=null) {
-    Logger.log(msg);
+  sendPhoto(params) {
+
+    let url = `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/`;
+
     let payload = {
       'method': 'sendPhoto',
-      'chat_id': String(msg['chat']['id']),
-      'photo': photo.getBlob(),
-      'parse_mode': 'HTML'
-    }
-    
-    if(replyTo) {
-      payload['reply_to_message_id'] = String(msg['message_id']);
-    }
-    
-    if(caption) {
-      payload['caption'] = caption;
+      'chat_id': params.chatId,
+      'photo': params.photo,
+      'message_thread_id': params.messageThreadId,
+      'caption': params.caption,
+      'parse_mode': params.parseMode,
+      'caption_entities': JSON.stringify(params.captionEntitites),
+      'has_spoiler': params.hasSpoiler,
+      'disable_notification': params.disableNotification,
+      'protect_content': params.protectContent,
+      'reply_parameters': JSON.stringify(params.replyParameters),
+      'reply_markup': JSON.stringify(params.replyMarkup)
     }
     
     let data = {
       'method': 'POST',
-      'payload': payload,
-      'muteHttpExceptions': true
+      'payload': payload
     }
 
-    return JSON.parse(UrlFetchApp.fetch(apiTelegramBotBaseUrl + this.telegramApiToken_ + '/', data).getContentText());  
+    return sendRequest(url, data);  
   }
 
   /**
    * Sends document to a Telegram chat represented in msg object
    *
    * @param {object} msg Telegram API message resource
-   * @param {File} document Google Drive File object of the document to send
+   * @param {Blob} document Google Drive File object of the document to send
    * @param {string} name Name of the document to send
    * @param {boolean} replyTo True if the message to send is a reply to the provided message
    *
    * @return {object} JSON response returned by Telegram API
    */
-  sendDocument(msg, document, name, replyTo=false) {
+  sendDocument(params) {
+
+    let url = `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/`;
+
     let payload = {
       'method': 'sendDocument',
-      'chat_id': String(msg['chat']['id']),
-      'document': document.getBlob().setName(name)
-    }
-    
-    if(replyTo) {
-      payload['reply_to_message_id'] = String(msg['message_id']);
+      'chat_id': params.chatId,
+      'document': params.document,
+      'message_thread_id': params.messageThreadId,
+      'thumbnail': params.thumbnail,
+      'caption': params.caption,
+      'parse_mode': params.parseMode,
+      'caption_entities': JSON.stringify(params.captionEntitites),
+      'disable_content_type_detection': params.disableContentTypeDetection,
+      'disable_notification': params.disableNotification,
+      'protect_content': params.protectContent,
+      'reply_parameters': JSON.stringify(params.replyParameters),
+      'reply_markup': JSON.stringify(params.replyMarkup)
     }
 
     let data = {
       'method': 'POST',
-      'payload': payload,
-      'muteHttpExceptions': true
+      'payload': payload
     }
 
-    return JSON.parse(UrlFetchApp.fetch(apiTelegramBotBaseUrl + this.telegramApiToken_ + '/', data).getContentText());  
+    return sendRequest(url, data);
   }
 
   /**
    * Sends animation (GIF) to a Telegram chat represented in msg object
    *
    * @param {object} msg Telegram API message resource
-   * @param {File} animation Google Drive File object of the animation to send
+   * @param {Blob} animation Google Drive File object of the animation to send
    * @param {boolean} replyTo True if the message to send is a reply to the provided message
    *
    * @return {object} JSON response returned by Telegram API
    */
-  sendAnimation(msg, animation, replyTo=false) {
+  sendAnimation(params) {
+
+    let url = `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/`;
+
     let payload = {
       'method': 'sendAnimation',
-      'chat_id': String(msg['chat']['id']),
-      'animation': animation.getBlob()
-    }
-    
-    if(replyTo) {
-      payload['reply_to_message_id'] = String(msg['message_id']);
+      'chat_id': params.chatId,
+      'animation': params.animation,
+      'message_thread_id': params.messageThreadId,
+      'duration': params.duration,
+      'width': params.width,
+      'height': params.height,
+      'thumbnail': params.thumbnail,
+      'caption': params.caption,
+      'parse_mode': params.parseMode,
+      'caption_entities': JSON.stringify(params.captionEntitites),
+      'disable_notification': params.disableNotification,
+      'protect_content': params.protectContent,
+      'reply_parameters': JSON.stringify(params.replyParameters),
+      'reply_markup': JSON.stringify(params.replyMarkup)
     }
 
     let data = {
       'method': 'POST',
-      'payload': payload,
-      'muteHttpExceptions': true
+      'payload': payload
     }
 
-    return JSON.parse(UrlFetchApp.fetch(apiTelegramBotBaseUrl + this.telegramApiToken_ + '/', data).getContentText());  
+    return sendRequest(url, data);
   }
 
   /**
    * Sends voice file to a Telegram chat represented in msg object
    *
    * @param {object} msg Telegram API message resource
-   * @param {File} voice Google Drive File object of the voice to send
+   * @param {Blob} voice Google Drive File object of the voice to send
    * @param {caption} Text to send as caption of the photo
    * @param {boolean} replyTo True if the message to send is a reply to the provided message
    *
    * @return {object} JSON response returned by Telegram API
    */
-  sendVoice(msg, voice, caption=null, replyTo=false) {
+  sendVoice(params) {
+
+    let url = `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/`;
   
     let payload = {
       'method': 'sendVoice',
-      'chat_id': String(msg['chat']['id']),
-      'voice': voice.getBlob()
-    }
-    
-    if(caption) {
-      payload['caption'] = caption;
-    }
-    
-    if(replyTo) {
-      payload['reply_to_message_id'] = String(msg['message_id']);
+      'chat_id': params.chatId,
+      'voice': params.voice,
+      'message_thread_id': params.messageThreadId,
+      'caption': params.caption,
+      'parse_mode': params.parseMode,
+      'caption_entities': JSON.stringify(params.captionEntitites),
+      'duration': params.duration,
+      'disable_notification': params.disableNotification,
+      'protect_content': params.protectContent,
+      'reply_parameters': JSON.stringify(params.replyParameters),
+      'reply_markup': JSON.stringify(params.replyMarkup)
     }
 
-    var data = {
+    let data = {
       'method': 'POST',
-      'payload': payload,
-      'muteHttpExceptions': true
+      'payload': payload
     }
 
-    return JSON.parse(UrlFetchApp.fetch(apiTelegramBotBaseUrl + this.telegramApiToken_ + '/', data).getContentText());  
+    return sendRequest(url, data);
   }
 
   /**
@@ -235,16 +282,24 @@ class TelegramBotApi_ {
    *
    * @return {object} JSON response returned by Telegram API
    */
-  sendLocation(msg, latitude, longitude, replyTo=false) {
+  sendLocation(params) {
+
+    let url = `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/`;
+
     let payload = {
       'method': 'sendLocation',
-      'chat_id': String(msg['chat']['id']),
-      'latitude': latitude,
-      'longitude': longitude
-    }
-    
-    if(replyTo) {
-      payload['reply_to_message_id'] = msg['message_id']
+      'chat_id': params.chatId,
+      'latitude': params.latitude,
+      'longitude': params.longitude,
+      'message_thread_id': params.messageThreadId,
+      'horizontal_accuracy': params.horizontalAccuracy,
+      'live_period': params.livePeriod,
+      'heading': params.heading,
+      'proximity_alert_radius': params.proximityAlertRadius,
+      'disable_notification': params.disableNotification,
+      'protect_content': params.protectContent,
+      'reply_parameters': JSON.stringify(params.replyParameters),
+      'reply_markup': JSON.stringify(params.replyMarkup)
     }
 
     let data = {
@@ -252,7 +307,7 @@ class TelegramBotApi_ {
       'payload': payload
     }
     
-    return JSON.parse(UrlFetchApp.fetch(apiTelegramBotBaseUrl + this.telegramApiToken_ + '/', data).getContentText());
+    return sendRequest(url, data);
   }
 
   /**
@@ -263,6 +318,9 @@ class TelegramBotApi_ {
    * @return {object} JSON response returned by Telegram API
    */
   getFile(fileID) {
+
+    let url = `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/`;
+
     let payload = {
       'method': 'getFile',
       'file_id': fileID
@@ -270,11 +328,10 @@ class TelegramBotApi_ {
     
     let data = {
       'method': 'GET',
-      'payload': payload,
-      'muteHttpExceptions': true
+      'payload': payload
     }
     
-    return JSON.parse(UrlFetchApp.fetch(apiTelegramBotBaseUrl + this.telegramApiToken_ + '/', data).getContentText());
+    return sendRequest(url, data);
   }
 
   /**
@@ -298,6 +355,9 @@ class TelegramBotApi_ {
    * @return {object} JSON response returned by Telegram API
    */
   getChat(chatId) {
+
+    let url = `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/`;
+
     let payload = {
       'method': 'getChat',
       'chat_id': chatId
@@ -305,11 +365,10 @@ class TelegramBotApi_ {
 
     let data = {
       'method': 'GET',
-      'payload': payload,
-      'muteHttpExceptions': true
+      'payload': payload
     }
 
-    return JSON.parse(UrlFetchApp.fetch(apiTelegramBotBaseUrl + this.telegramApiToken_ + '/', data).getContentText());
+    return sendRequest(url, data);
   }
 
   /**
@@ -322,6 +381,8 @@ class TelegramBotApi_ {
    * @return {object} JSON response returned by Telegram API
    */
   answerInlineQuery(inlineQuery, results, cacheTime=1) {
+
+    let url = `${apiTelegramBotBaseUrl}${this.telegramApiToken_}/`;
       
     var payload = {
       'method': 'answerInlineQuery',
@@ -332,10 +393,9 @@ class TelegramBotApi_ {
 
     var data = {
       'method': 'POST',
-      'payload': payload,
-      'muteHttpExceptions': true
+      'payload': payload
     }
 
-    return JSON.parse(UrlFetchApp.fetch(apiTelegramBotBaseUrl + this.telegramApiToken_ + '/', data).getContentText());  
+    return sendRequest(url, data);
   }
 }

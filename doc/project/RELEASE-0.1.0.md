@@ -1,6 +1,6 @@
-## v4
+## v0.1.0
 
-Implemented and working methods:
+Implemented in a stable way the following Telegram Bot API methods:
 
 - setWebhook
 - deleteWebhook
@@ -14,4 +14,7 @@ Implemented and working methods:
 - sendLocation
 - getFile
 - getChat
+
+Implemented unstably the following methods:
+
 - answerInlineQuery

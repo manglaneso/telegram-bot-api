@@ -1,10 +1,11 @@
 {
   "name": "telegram-bot-api",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Telegram Bot API library",
   "main": "src/TelegramAPI.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "push-to-app": "cd src && clasp push -f",
+    "deploy-app": "cd src && clasp deploy"
   },
   "repository": {
     "type": "git",
@@ -17,6 +18,6 @@
   },
   "homepage": "https://github.com/manglaneso/telegram-bot-api#readme",
   "dependencies": {
-    "@google/clasp": "^2.4.0"
+    "@google/clasp": "^2.4.2"
   }
 }
